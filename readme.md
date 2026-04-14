@@ -46,3 +46,9 @@ pro její otevření otevřete soubor `index.html` v prohlížeči
 cd docs/html/
 firefox index.html
 ```
+
+---
+#### zdroje
+- https://w3schools.com
+- https://en.cppreference.com/
+- https://en.wikipedia.org/wiki/Topological_sorting
