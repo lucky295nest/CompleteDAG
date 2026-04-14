@@ -1,0 +1,6 @@
+Graf je DAG
+pocet vrcholu zadani: 4
+pocet hran zadani: 3
+ocekavany pocet hran podle vztahu: 6
+pocet vrcholu kompletniho DAG: 4
+pocet hran kompletniho DAG: 6

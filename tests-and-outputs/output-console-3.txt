@@ -1,0 +1,3 @@
+Graf neni DAG
+pocet vrcholu zadani: 4
+pocet hran zadani: 4

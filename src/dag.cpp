@@ -1,6 +1,7 @@
 #include "dag.hpp"
 #include <fstream>
 #include <iostream>
+#include <queue>
 #include <sstream>
 
 typedef struct {
@@ -8,10 +9,11 @@ typedef struct {
 	int in_degree;
 } pnt_in_degree;
 
-DAG::DAG(std::string filename) {
-	std::ifstream file(filename);
+DAG::DAG(std::string file_name) {
+	std::ifstream file(file_name);
 
 	std::string line;
+
 	while (std::getline(file, line)) {
 		std::istringstream iss(line);
 
@@ -27,6 +29,14 @@ DAG::DAG(std::string filename) {
 		this->setPoint(pnt_b);
 		this->setEdge(pnt_a, pnt_b);
 	}
+
+	file.close();
+
+	this->preCompletePointCount = points.size();
+	this->preCompleteEdgeCount = edges.size();
+	this->getComplete();
+	this->pointCount = points.size();
+	this->edgeCount = edges.size();
 }
 
 bool DAG::setPoint(int pnt) {
@@ -52,12 +62,7 @@ bool DAG::setEdge(int pnt_a, int pnt_b) {
 	return true;
 }
 
-bool DAG::checkCyclic() {
-	return false;
-}
-
-DAG &DAG::getComplete() {
-	DAG *temp = new DAG(*this);
+void DAG::getComplete() {
 	std::vector<pnt_in_degree> pid;
 	for (const auto &p : this->points) {
 		int p_cnt = 0;
@@ -69,21 +74,90 @@ DAG &DAG::getComplete() {
 		pid.push_back({p, p_cnt});
 	}
 
-	// TODO: Kahnuv algoritmus
+	std::queue<int> q;
+	std::vector<int> order;
 
-	return *temp;
-}
+	for (const auto &p : pid) {
+		if (p.in_degree == 0) {
+			q.push(p.pnt);
+		}
+	}
 
-void DAG::printPoints() {
-	std::cout << "--- POINTS ---\n";
-	for (const auto &p : this->points) {
-		std::cout << p << "\n";
+	while (!q.empty()) {
+		int temp = -1;
+		order.push_back(q.front());
+		temp = q.front();
+		q.pop();
+
+		for (const auto &e : this->edges) {
+			if (e.point_a != temp) {
+				continue;
+			}
+			for (auto &p : pid) {
+				if (p.pnt != e.point_b) {
+					continue;
+				}
+				p.in_degree--;
+				if (p.in_degree == 0) {
+					q.push(p.pnt);
+				}
+			}
+		}
+	}
+
+	(order.size() == this->points.size()) ? this->isDAG = true : this->isDAG = false;
+
+	for (int i = 0; i < order.size() - 1; i++) {
+		for (int j = i + 1; j < order.size(); j++) {
+			this->setEdge(order[i], order[j]);
+		}
 	}
 }
 
-void DAG::printEdges() {
-	std::cout << "--- EDGES ---\n";
+int DAG::getPrevPointCount() const {
+	return this->preCompletePointCount;
+}
+
+int DAG::getPrevEdgeCount() const {
+	return this->preCompleteEdgeCount;
+}
+
+int DAG::getPointCount() const {
+	return this->pointCount;
+}
+
+int DAG::getEdgeCount() const {
+	return this->edgeCount;
+}
+
+void DAG::printEdgesToFile(std::string file_name) {
+	std::fstream file(file_name);
+
 	for (const auto &e : this->edges) {
-		std::cout << e.point_a << " -> " << e.point_b << "\n";
+		file << e.point_a;
+		file << " ";
+		file << e.point_b;
+		file << "\n";
 	}
+
+	file.close();
+}
+
+std::ostream &operator<<(std::ostream &os, const DAG &d) {
+	int ppc = d.getPrevPointCount();
+	int pec = d.getPrevEdgeCount();
+	std::stringstream ss;
+	if (d.isDAG) {
+		return os << "Graf je DAG\n"
+							<< "pocet vrcholu zadani: " << ppc << "\n"
+							<< "pocet hran zadani: " << pec << "\n"
+							<< "ocekavany pocet hran podle vztahu: " << (0.5 * ppc * (ppc - 1)) << "\n"
+							<< "pocet vrcholu kompletniho DAG: " << d.getPointCount() << "\n"
+							<< "pocet hran kompletniho DAG: " << d.getEdgeCount() << "\n";
+	} else {
+		return os << "Graf neni DAG\n"
+							<< "pocet vrcholu zadani: " << ppc << "\n"
+							<< "pocet hran zadani: " << pec << "\n";
+	}
+	return os << "tohle se nikdy nestane\n";
 }
